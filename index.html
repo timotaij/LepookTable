@@ -60,7 +60,9 @@
     // URL of the CSV file in your repository
     const csvUrl = 'https://raw.githubusercontent.com/timotaij/LepookTable/main/MAMBAVALUES.csv';
 
-    let dataRows = []; // To store the table data for sorting
+    let dataRows = []; // To store the table data for sorting and filtering
+    let currentSortColumn = null;
+    let sortAscending = true; // To toggle sorting order
 
     fetch(csvUrl)
         .then(response => response.text())
@@ -77,7 +79,9 @@
                 th.textContent = cell;
 
                 // Add sorting functionality to each header
-                th.addEventListener('click', () => sortTableByColumn(index));
+                th.addEventListener('click', () => {
+                    toggleSortByColumn(index);
+                });
 
                 // Add filters for each column
                 const filterInput = document.createElement('input');
@@ -142,13 +146,26 @@
         });
     }
 
-    // Function to sort table by column
-    function sortTableByColumn(columnIndex) {
+    // Function to sort table by column (with toggle between ascending/descending)
+    function toggleSortByColumn(columnIndex) {
+        if (currentSortColumn === columnIndex) {
+            sortAscending = !sortAscending; // Toggle sort order if clicking the same column
+        } else {
+            sortAscending = true; // Default to ascending when clicking a new column
+            currentSortColumn = columnIndex;
+        }
+
         const sortedRows = [...dataRows].sort((a, b) => {
             const valA = isNaN(a[columnIndex]) ? a[columnIndex] : parseFloat(a[columnIndex]);
             const valB = isNaN(b[columnIndex]) ? b[columnIndex] : parseFloat(b[columnIndex]);
-            return valA > valB ? 1 : -1;
+
+            if (sortAscending) {
+                return valA > valB ? 1 : -1;
+            } else {
+                return valA < valB ? 1 : -1;
+            }
         });
+
         renderTableBody(sortedRows);
     }
 
@@ -163,7 +180,20 @@
                 return !filterValue || cell.includes(filterValue);
             });
         });
-        renderTableBody(filteredRows);
+
+        // Apply sorting to the filtered data
+        const sortedFilteredRows = filteredRows.sort((a, b) => {
+            const valA = isNaN(a[currentSortColumn]) ? a[currentSortColumn] : parseFloat(a[currentSortColumn]);
+            const valB = isNaN(b[currentSortColumn]) ? b[currentSortColumn] : parseFloat(b[currentSortColumn]);
+
+            if (sortAscending) {
+                return valA > valB ? 1 : -1;
+            } else {
+                return valA < valB ? 1 : -1;
+            }
+        });
+
+        renderTableBody(sortedFilteredRows);
     }
 </script>
 
