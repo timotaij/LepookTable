@@ -24,7 +24,7 @@
 </head>
 <body>
 
-<h1>Interactive CSV Data Table</h1>
+<h1>CSV Data Table</h1>
 
 <!-- Filter Input -->
 <label for="filter">Filter by Player Name:</label>
@@ -45,7 +45,6 @@
     fetch(csvUrl)
         .then(response => response.text())
         .then(data => {
-            console.log("CSV data fetched:", data);  // Log CSV data to ensure it's being fetched
             const rows = data.split('\n').filter(row => row.trim() !== ''); // Remove any empty rows
             const header = rows[0].split(',');
             const bodyRows = rows.slice(1);
@@ -70,7 +69,6 @@
                     if (!isNaN(cell) && index > 0) { // Skip player name column (index 0)
                         const value = parseFloat(cell);
                         td.style.backgroundColor = getColorForValue(value, -3, 3); // Color based on -3 to +3 scale
-                        console.log("Formatted cell value:", value, td.style.backgroundColor);  // Log formatted cell
                     }
 
                     tr.appendChild(td);
@@ -81,7 +79,6 @@
             // Add filter functionality
             document.getElementById('filter').addEventListener('input', function() {
                 const filterValue = this.value.toLowerCase();
-                console.log("Filter input:", filterValue);  // Log filter input
                 const rows = tableBody.getElementsByTagName('tr');
                 for (let i = 0; i < rows.length; i++) {
                     const firstCell = rows[i].getElementsByTagName('td')[0];
