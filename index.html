@@ -82,14 +82,10 @@
             renderTableBody(dataRows);
 
             // Filter functionality for Player Name
-            document.getElementById('filterPlayer').addEventListener('input', function() {
-                filterTable();
-            });
+            document.getElementById('filterPlayer').addEventListener('input', filterTable);
 
             // Filter functionality for Season
-            document.getElementById('filterSeason').addEventListener('input', function() {
-                filterTable();
-            });
+            document.getElementById('filterSeason').addEventListener('input', filterTable);
         })
         .catch(error => console.error('Error loading the CSV file:', error));
 
