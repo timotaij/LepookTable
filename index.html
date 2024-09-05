@@ -53,23 +53,11 @@
             width: 100%;
             table-layout: fixed;
         }
-        .load-more {
-            margin-top: 10px;
-            padding: 5px 15px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        .load-more:hover {
-            background-color: #0056b3;
-        }
     </style>
 </head>
 <body>
 
-<h1>New Table</h1>
+<h1>Impact Table2</h1>
 
 <!-- Table with Filters -->
 <table id="csvTable">
@@ -80,18 +68,14 @@
     <tbody id="tableBody"></tbody>
 </table>
 
-<!-- Load More Button -->
-<button id="loadMoreBtn" class="load-more">Load More Rows</button>
-
 <script>
     // URL of the CSV file in your repository
     const csvUrl = 'https://raw.githubusercontent.com/timotaij/LepookTable/main/MAMBAVALUES.csv';
 
     let dataRows = []; // To store the table data for sorting and filtering
-    let currentSortColumn = null;
-    let sortAscending = true; // To toggle sorting order
-    let currentRowsToShow = 20; // Default number of rows to show initially
-    const rowsPerLoad = 20; // Number of rows to load each time
+    let currentSortColumn = 3; // Default to sorting by "OVR" column (assuming OVR is column 3)
+    let sortAscending = false; // Sort by descending by default for OVR
+    let currentSeason = '2017'; // Start with the 2017 season by default
 
     fetch(csvUrl)
         .then(response => response.text())
@@ -121,6 +105,12 @@
                 filterInput.placeholder = `Filter ${cell}`;
                 filterInput.addEventListener('input', filterTable);
 
+                // Special handling for season column to auto-filter the season
+                if (cell === 'Season') {
+                    filterInput.value = '2017'; // Default to 2017 season
+                    filterInput.addEventListener('input', filterBySeason);
+                }
+
                 const thFilter = document.createElement('th');
                 thFilter.appendChild(filterInput);
                 filterRow.appendChild(thFilter);
@@ -128,33 +118,15 @@
                 headerRow.appendChild(th);
             });
 
-            // Render the first set of rows
-            renderTableBody(dataRows.slice(0, currentRowsToShow));
+            // Render the rows for the initial season (2017)
+            renderTableBody(getRowsForSeason('2017'));
 
-            // Load more rows on button click
-            document.getElementById('loadMoreBtn').addEventListener('click', loadMoreRows);
         })
         .catch(error => console.error('Error loading the CSV file:', error));
 
-    // Function to get color based on value from red (-3) to green (+3), with white in the middle
-    function getColorForValue(value, min, max) {
-        const mid = (min + max) / 2;
-        const ratio = (value - mid) / (max - min);
-        let red, green;
-
-        if (value >= mid) {
-            green = 255;
-            red = 255 * (1 - ratio);  // Shade toward green
-        } else {
-            red = 255;
-            green = 255 * (1 + ratio);  // Shade toward red
-        }
-
-        // Limit the brightness to prevent overpowering the text
-        red = Math.max(red, 120);
-        green = Math.max(green, 120);
-
-        return `rgb(${Math.round(red)}, ${Math.round(green)}, 120)`; // Keeping blue component low for better contrast
+    // Function to get rows for a specific season
+    function getRowsForSeason(season) {
+        return dataRows.filter(row => row[3] === season); // Assuming the season is in column 3
     }
 
     // Function to render the table body
@@ -179,6 +151,27 @@
         });
     }
 
+    // Function to get color based on value from red (-3) to green (+3), with white in the middle
+    function getColorForValue(value, min, max) {
+        const mid = (min + max) / 2;
+        const ratio = (value - mid) / (max - min);
+        let red, green;
+
+        if (value >= mid) {
+            green = 255;
+            red = 255 * (1 - ratio);  // Shade toward green
+        } else {
+            red = 255;
+            green = 255 * (1 + ratio);  // Shade toward red
+        }
+
+        // Limit the brightness to prevent overpowering the text
+        red = Math.max(red, 120);
+        green = Math.max(green, 120);
+
+        return `rgb(${Math.round(red)}, ${Math.round(green)}, 120)`; // Keeping blue component low for better contrast
+    }
+
     // Function to sort table by column (with toggle between ascending/descending)
     function toggleSortByColumn(columnIndex, headerEl) {
         // Clear sorting arrows from all headers
@@ -194,48 +187,44 @@
         // Add arrow direction on current column
         headerEl.classList.add(sortAscending ? 'asc' : 'desc');
 
-        const sortedRows = [...dataRows].sort((a, b) => {
-            const valA = isNaN(a[columnIndex]) ? a[columnIndex] : parseFloat(a[columnIndex]);
-            const valB = isNaN(b[columnIndex]) ? b[columnIndex] : parseFloat(b[columnIndex]);
+        const sortedRows = [...dataRows].filter(row => row[3] === currentSeason) // Filter rows for current season
+            .sort((a, b) => {
+                const valA = isNaN(a[columnIndex]) ? a[columnIndex] : parseFloat(a[columnIndex]);
+                const valB = isNaN(b[columnIndex]) ? b[columnIndex] : parseFloat(b[columnIndex]);
 
-            if (sortAscending) {
-                return valA > valB ? 1 : -1;
-            } else {
-                return valA < valB ? 1 : -1;
-            }
-        });
+                if (sortAscending) {
+                    return valA > valB ? 1 : -1;
+                } else {
+                    return valA < valB ? 1 : -1;
+                }
+            });
 
-        // Render only the rows that are currently visible
-        renderTableBody(sortedRows.slice(0, currentRowsToShow));
+        // Render the sorted rows for the current season
+        renderTableBody(sortedRows);
     }
 
     // Function to filter table based on input in filter boxes
     function filterTable() {
         const filterInputs = document.querySelectorAll('.filter-input');
-        const filteredRows = dataRows.filter(row => {
-            return filterInputs.every(input => {
-                const column = input.getAttribute('data-column');
-                const filterValue = input.value.toLowerCase();
-                const cell = row[column]?.toLowerCase();
-                return !filterValue || cell.includes(filterValue);
+        const filteredRows = dataRows.filter(row => row[3] === currentSeason) // Apply season filter first
+            .filter(row => {
+                return filterInputs.every(input => {
+                    const column = input.getAttribute('data-column');
+                    const filterValue = input.value.toLowerCase();
+                    const cell = row[column]?.toLowerCase();
+                    return !filterValue || cell.includes(filterValue);
+                });
             });
-        });
 
-        // Apply sorting to the filtered data
-        const sortedFilteredRows = filteredRows.sort((a, b) => {
-            const valA = isNaN(a[currentSortColumn]) ? a[currentSortColumn] : parseFloat(a[currentSortColumn]);
-            const valB = isNaN(b[currentSortColumn]) ? b[currentSortColumn] : parseFloat(b[currentSortColumn]);
-
-            if (sortAscending) {
-                return valA > valB ? 1 : -1;
-            } else {
-                return valA < valB ? 1 : -1;
-            }
-        });
-
-        renderTableBody(sortedFilteredRows.slice(0, currentRowsToShow));
+        renderTableBody(filteredRows);
     }
 
+    // Function to filter by season
+    function filterBySeason(event) {
+        currentSeason = event.target.value;
+        const rowsForSeason = getRowsForSeason(currentSeason);
+        renderTableBody(rowsForSeason);
+    }
 </script>
 
 </body>
