@@ -141,12 +141,20 @@
         const playerFilterValue = document.getElementById('filterPlayer').value.toLowerCase();
         const seasonFilterValue = document.getElementById('filterSeason').value; // Get value from dropdown
 
+        // Debugging: Log all season values
+        console.log('Filtering by Season:', seasonFilterValue);
+
         const filteredRows = dataRows.filter(row => {
             const playerName = row[0].toLowerCase();
             const season = row[row.length - 1].trim(); // Assuming Season is the last column and trimming whitespace
+
+            // Debugging: Log each season value from the CSV to inspect
+            console.log('Row Season:', season);
+
             return playerName.includes(playerFilterValue) && season === seasonFilterValue;
         });
 
+        console.log('Filtered Rows:', filteredRows.length);  // Log how many rows are left after filtering
         renderTableBody(filteredRows);
     }
 
