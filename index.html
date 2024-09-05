@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive CSV Table</title>
+    <title>Impact Metric Table</title>
     <style>
         table {
             width: 100%;
@@ -17,6 +17,17 @@
             padding: 10px;
             text-align: left;
         }
+        th {
+            cursor: pointer;
+        }
+        th.sortable:after {
+            content: '▲'; /* Default ascending arrow */
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        th.desc:after {
+            content: '▼'; /* Descending arrow */
+        }
         .filter-input {
             margin-bottom: 10px;
         }
@@ -24,7 +35,7 @@
 </head>
 <body>
 
-<h1>Impact Metric Attempt</h1>
+<h1>Impact Metric Table</h1>
 
 <!-- Filter Input -->
 <label for="filter">Filter by Player Name:</label>
@@ -39,64 +50,106 @@
 </table>
 
 <script>
-    // URL of the CSV file in your repository
     const csvUrl = 'https://raw.githubusercontent.com/timotaij/LepookTable/main/MAMBAVALUES.csv';
+    let dataRows = []; // To store the table data for sorting
+    let currentSortColumn = null;
+    let sortAscending = true; // Start with ascending order
 
     fetch(csvUrl)
         .then(response => response.text())
         .then(data => {
-            const rows = data.split('\n').filter(row => row.trim() !== ''); // Remove any empty rows
+            const rows = data.split('\n').filter(row => row.trim() !== '');
             const header = rows[0].split(',');
-            const bodyRows = rows.slice(1);
+            dataRows = rows.slice(1).map(row => row.split(','));
             
-            // Create table header
+            // Create table header with sortable columns
             const headerRow = document.getElementById('tableHeader');
-            header.forEach(cell => {
+            header.forEach((cell, index) => {
                 const th = document.createElement('th');
                 th.textContent = cell;
+                th.classList.add('sortable');
+                th.addEventListener('click', () => {
+                    toggleSortByColumn(index, th);
+                });
                 headerRow.appendChild(th);
             });
-            
-            // Create table body
-            const tableBody = document.getElementById('tableBody');
-            bodyRows.forEach(row => {
-                const tr = document.createElement('tr');
-                row.split(',').forEach((cell, index) => {
-                    const td = document.createElement('td');
-                    td.textContent = cell;
 
-                    // Apply conditional formatting for numeric columns (values like Offense, Defense)
-                    if (!isNaN(cell) && index > 0) { // Skip player name column (index 0)
-                        const value = parseFloat(cell);
-                        td.style.backgroundColor = getColorForValue(value, -3, 3); // Color based on -3 to +3 scale
-                    }
+            // Render the table body initially
+            renderTableBody(dataRows);
 
-                    tr.appendChild(td);
-                });
-                tableBody.appendChild(tr);
-            });
-
-            // Add filter functionality
+            // Filter functionality
             document.getElementById('filter').addEventListener('input', function() {
                 const filterValue = this.value.toLowerCase();
-                const rows = tableBody.getElementsByTagName('tr');
-                for (let i = 0; i < rows.length; i++) {
-                    const firstCell = rows[i].getElementsByTagName('td')[0];
-                    if (firstCell) {
-                        const playerName = firstCell.textContent.toLowerCase();
-                        rows[i].style.display = playerName.includes(filterValue) ? '' : 'none';
-                    }
-                }
+                const filteredRows = dataRows.filter(row => row[0].toLowerCase().includes(filterValue));
+                renderTableBody(filteredRows);
             });
         })
         .catch(error => console.error('Error loading the CSV file:', error));
 
-    // Function to get color based on value from red (-3) to green (+3)
+    // Function to get color based on value from red (-3) to white (0) to green (+3)
     function getColorForValue(value, min, max) {
-        const percentage = (value - min) / (max - min);
-        const red = Math.min(255, Math.max(0, 255 * (1 - percentage)));
-        const green = Math.min(255, Math.max(0, 255 * percentage));
-        return `rgb(${red}, ${green}, 0)`;
+        const mid = (min + max) / 2;
+        let red, green;
+
+        if (value >= mid) {
+            green = 255;
+            red = Math.round(255 * (1 - (value - mid) / (max - mid)));  // From white to green
+        } else {
+            red = 255;
+            green = Math.round(255 * (value - min) / (mid - min));  // From red to white
+        }
+
+        return `rgb(${red}, ${green}, 120)`;
+    }
+
+    // Function to render the table body
+    function renderTableBody(rows) {
+        const tableBody = document.getElementById('tableBody');
+        tableBody.innerHTML = ''; // Clear previous content
+        rows.forEach(row => {
+            const tr = document.createElement('tr');
+            row.forEach((cell, index) => {
+                const td = document.createElement('td');
+                td.textContent = cell;
+
+                // Apply color formatting to numeric columns (skip player name)
+                if (!isNaN(cell) && index > 0) {
+                    const value = parseFloat(cell);
+                    td.style.backgroundColor = getColorForValue(value, -3, 3);
+                }
+
+                tr.appendChild(td);
+            });
+            tableBody.appendChild(tr);
+        });
+    }
+
+    // Function to sort the table by column
+    function toggleSortByColumn(columnIndex, headerEl) {
+        const allHeaders = document.querySelectorAll('.sortable');
+        allHeaders.forEach(th => th.classList.remove('desc', 'asc'));
+
+        if (currentSortColumn === columnIndex) {
+            sortAscending = !sortAscending; // Toggle sort order if same column clicked
+        } else {
+            sortAscending = true; // Default to ascending for new column
+            currentSortColumn = columnIndex;
+        }
+
+        headerEl.classList.add(sortAscending ? 'asc' : 'desc');
+
+        const sortedRows = [...dataRows].sort((a, b) => {
+            const valA = isNaN(a[columnIndex]) ? a[columnIndex] : parseFloat(a[columnIndex]);
+            const valB = isNaN(b[columnIndex]) ? b[columnIndex] : parseFloat(b[columnIndex]);
+
+            if (sortAscending) {
+                return valA > valB ? 1 : -1;
+            } else {
+                return valA < valB ? 1 : -1;
+            }
+        });
+
+        renderTableBody(sortedRows);
     }
 </script>
 
