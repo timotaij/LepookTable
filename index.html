@@ -91,8 +91,8 @@
         .then(response => response.text())
         .then(data => {
             const rows = data.split('\n').filter(row => row.trim() !== ''); // Remove any empty rows
-            const header = rows[0].split(',');
-            dataRows = rows.slice(1).map(row => row.split(',')); // Store the data for sorting
+            const header = rows[0].split(','); // Extract the header row
+            dataRows = rows.slice(1).map(row => row.split(',')); // Store the data for sorting and filtering
 
             // Create table header with sortable columns
             const headerRow = document.getElementById('tableHeader');
@@ -122,8 +122,8 @@
 
     // Function to get rows for a specific season
     function getRowsForSeason(season) {
-        // Find the index of the season column (assuming column 3 for season)
-        return dataRows.filter(row => row.includes(season)); // Filter by season
+        const seasonColumnIndex = 2; // Adjust the column index where the season is located
+        return dataRows.filter(row => row[seasonColumnIndex] === season); // Filter rows based on the season
     }
 
     // Function to render the table body
@@ -184,7 +184,7 @@
         // Add arrow direction on current column
         headerEl.classList.add(sortAscending ? 'asc' : 'desc');
 
-        const sortedRows = [...dataRows].filter(row => row.includes(currentSeason)) // Filter rows for current season
+        const sortedRows = [...dataRows].filter(row => row[2] === currentSeason) // Filter rows for current season
             .sort((a, b) => {
                 const valA = isNaN(a[columnIndex]) ? a[columnIndex] : parseFloat(a[columnIndex]);
                 const valB = isNaN(b[columnIndex]) ? b[columnIndex] : parseFloat(b[columnIndex]);
