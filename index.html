@@ -24,6 +24,18 @@
             z-index: 1;
             cursor: pointer;
         }
+        th.sortable {
+            position: relative;
+        }
+        th.sortable:after {
+            content: '\25B2'; /* Default ascending arrow */
+            position: absolute;
+            right: 5px;
+            font-size: 12px;
+        }
+        th.sortable.desc:after {
+            content: '\25BC'; /* Descending arrow */
+        }
         .filter-input {
             margin-bottom: 10px;
             width: 100px;
@@ -41,6 +53,18 @@
             width: 100%;
             table-layout: fixed;
         }
+        .load-more {
+            margin-top: 10px;
+            padding: 5px 15px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .load-more:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -56,6 +80,9 @@
     <tbody id="tableBody"></tbody>
 </table>
 
+<!-- Load More Button -->
+<button id="loadMoreBtn" class="load-more">Load More Rows</button>
+
 <script>
     // URL of the CSV file in your repository
     const csvUrl = 'https://raw.githubusercontent.com/timotaij/LepookTable/main/MAMBAVALUES.csv';
@@ -63,6 +90,8 @@
     let dataRows = []; // To store the table data for sorting and filtering
     let currentSortColumn = null;
     let sortAscending = true; // To toggle sorting order
+    let currentRowsToShow = 20; // Default number of rows to show initially
+    const rowsPerLoad = 20; // Number of rows to load each time
 
     fetch(csvUrl)
         .then(response => response.text())
@@ -77,10 +106,11 @@
             header.forEach((cell, index) => {
                 const th = document.createElement('th');
                 th.textContent = cell;
-
+                th.classList.add('sortable');
+                
                 // Add sorting functionality to each header
                 th.addEventListener('click', () => {
-                    toggleSortByColumn(index);
+                    toggleSortByColumn(index, th);
                 });
 
                 // Add filters for each column
@@ -98,8 +128,11 @@
                 headerRow.appendChild(th);
             });
 
-            // Render the table body
-            renderTableBody(dataRows);
+            // Render the first set of rows
+            renderTableBody(dataRows.slice(0, currentRowsToShow));
+
+            // Load more rows on button click
+            document.getElementById('loadMoreBtn').addEventListener('click', loadMoreRows);
         })
         .catch(error => console.error('Error loading the CSV file:', error));
 
@@ -147,13 +180,19 @@
     }
 
     // Function to sort table by column (with toggle between ascending/descending)
-    function toggleSortByColumn(columnIndex) {
+    function toggleSortByColumn(columnIndex, headerEl) {
+        // Clear sorting arrows from all headers
+        document.querySelectorAll('.sortable').forEach(th => th.classList.remove('desc', 'asc'));
+
         if (currentSortColumn === columnIndex) {
             sortAscending = !sortAscending; // Toggle sort order if clicking the same column
         } else {
             sortAscending = true; // Default to ascending when clicking a new column
             currentSortColumn = columnIndex;
         }
+
+        // Add arrow direction on current column
+        headerEl.classList.add(sortAscending ? 'asc' : 'desc');
 
         const sortedRows = [...dataRows].sort((a, b) => {
             const valA = isNaN(a[columnIndex]) ? a[columnIndex] : parseFloat(a[columnIndex]);
@@ -166,7 +205,8 @@
             }
         });
 
-        renderTableBody(sortedRows);
+        // Render only the rows that are currently visible
+        renderTableBody(sortedRows.slice(0, currentRowsToShow));
     }
 
     // Function to filter table based on input in filter boxes
@@ -193,7 +233,13 @@
             }
         });
 
-        renderTableBody(sortedFilteredRows);
+        renderTableBody(sortedFilteredRows.slice(0, currentRowsToShow));
+    }
+
+    // Function to load more rows
+    function loadMoreRows() {
+        currentRowsToShow += rowsPerLoad;
+        renderTableBody(dataRows.slice(0, currentRowsToShow));
     }
 </script>
 
