@@ -142,10 +142,13 @@
             const valA = isNaN(a[columnIndex]) ? a[columnIndex] : parseFloat(a[columnIndex]);
             const valB = isNaN(b[columnIndex]) ? b[columnIndex] : parseFloat(b[columnIndex]);
 
-            if (sortAscending) {
-                return valA > valB ? 1 : -1;
+            // Ensure correct sorting by treating numbers and strings separately
+            if (!isNaN(valA) && !isNaN(valB)) {
+                return sortAscending ? valA - valB : valB - valA;
             } else {
-                return valA < valB ? 1 : -1;
+                if (valA < valB) return sortAscending ? -1 : 1;
+                if (valA > valB) return sortAscending ? 1 : -1;
+                return 0;
             }
         });
 
