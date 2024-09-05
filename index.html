@@ -17,6 +17,13 @@
             padding: 10px;
             text-align: left;
         }
+        th {
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 1;
+            cursor: pointer;
+        }
         .filter-input {
             margin-bottom: 10px;
             width: 100px;
@@ -24,13 +31,23 @@
         .filter-row {
             background-color: #f1f1f1;
         }
+        tbody {
+            display: block;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        thead, tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
     </style>
 </head>
 <body>
 
 <h1>VEEEETABLEe</h1>
 
-<!-- Filter Input -->
+<!-- Table with Filters -->
 <table id="csvTable">
     <thead>
         <tr id="tableHeader"></tr>
@@ -43,19 +60,24 @@
     // URL of the CSV file in your repository
     const csvUrl = 'https://raw.githubusercontent.com/timotaij/LepookTable/main/MAMBAVALUES.csv';
 
+    let dataRows = []; // To store the table data for sorting
+
     fetch(csvUrl)
         .then(response => response.text())
         .then(data => {
             const rows = data.split('\n').filter(row => row.trim() !== ''); // Remove any empty rows
             const header = rows[0].split(',');
-            const bodyRows = rows.slice(1);
+            dataRows = rows.slice(1).map(row => row.split(',')); // Store the data for sorting
 
-            // Create table header
+            // Create table header with sortable columns
             const headerRow = document.getElementById('tableHeader');
             const filterRow = document.getElementById('filterRow');
             header.forEach((cell, index) => {
                 const th = document.createElement('th');
                 th.textContent = cell;
+
+                // Add sorting functionality to each header
+                th.addEventListener('click', () => sortTableByColumn(index));
 
                 // Add filters for each column
                 const filterInput = document.createElement('input');
@@ -72,24 +94,8 @@
                 headerRow.appendChild(th);
             });
 
-            // Create table body
-            const tableBody = document.getElementById('tableBody');
-            bodyRows.forEach(row => {
-                const tr = document.createElement('tr');
-                row.split(',').forEach((cell, index) => {
-                    const td = document.createElement('td');
-                    td.textContent = cell;
-
-                    // Apply conditional formatting for numeric columns (values like Offense, Defense)
-                    if (!isNaN(cell) && index > 0) { // Skip player name column (index 0)
-                        const value = parseFloat(cell);
-                        td.style.backgroundColor = getColorForValue(value, -3, 3); // Color based on -3 to +3 scale
-                    }
-
-                    tr.appendChild(td);
-                });
-                tableBody.appendChild(tr);
-            });
+            // Render the table body
+            renderTableBody(dataRows);
         })
         .catch(error => console.error('Error loading the CSV file:', error));
 
@@ -107,28 +113,57 @@
             green = 255 * (1 + ratio);  // Shade toward red
         }
 
-        return `rgb(${Math.round(red)}, ${Math.round(green)}, 0)`;
+        // Limit the brightness to prevent overpowering the text
+        red = Math.max(red, 120);
+        green = Math.max(green, 120);
+
+        return `rgb(${Math.round(red)}, ${Math.round(green)}, 120)`; // Keeping blue component low for better contrast
+    }
+
+    // Function to render the table body
+    function renderTableBody(rows) {
+        const tableBody = document.getElementById('tableBody');
+        tableBody.innerHTML = ''; // Clear previous content
+        rows.forEach(row => {
+            const tr = document.createElement('tr');
+            row.forEach((cell, index) => {
+                const td = document.createElement('td');
+                td.textContent = cell;
+
+                // Apply conditional formatting for numeric columns (values like Offense, Defense)
+                if (!isNaN(cell) && index > 0) { // Skip player name column (index 0)
+                    const value = parseFloat(cell);
+                    td.style.backgroundColor = getColorForValue(value, -3, 3); // Color based on -3 to +3 scale
+                }
+
+                tr.appendChild(td);
+            });
+            tableBody.appendChild(tr);
+        });
+    }
+
+    // Function to sort table by column
+    function sortTableByColumn(columnIndex) {
+        const sortedRows = [...dataRows].sort((a, b) => {
+            const valA = isNaN(a[columnIndex]) ? a[columnIndex] : parseFloat(a[columnIndex]);
+            const valB = isNaN(b[columnIndex]) ? b[columnIndex] : parseFloat(b[columnIndex]);
+            return valA > valB ? 1 : -1;
+        });
+        renderTableBody(sortedRows);
     }
 
     // Function to filter table based on input in filter boxes
     function filterTable() {
         const filterInputs = document.querySelectorAll('.filter-input');
-        const rows = document.querySelectorAll('#tableBody tr');
-
-        rows.forEach(row => {
-            let shouldShow = true;
-            filterInputs.forEach(input => {
+        const filteredRows = dataRows.filter(row => {
+            return filterInputs.every(input => {
                 const column = input.getAttribute('data-column');
                 const filterValue = input.value.toLowerCase();
-                const cell = row.cells[column]?.textContent.toLowerCase();
-
-                if (filterValue && !cell.includes(filterValue)) {
-                    shouldShow = false;
-                }
+                const cell = row[column]?.toLowerCase();
+                return !filterValue || cell.includes(filterValue);
             });
-
-            row.style.display = shouldShow ? '' : 'none';
         });
+        renderTableBody(filteredRows);
     }
 </script>
 
