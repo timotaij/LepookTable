@@ -56,7 +56,7 @@
 </head>
 <body>
 
-<h1>VEEEfee</h1>
+<h1>VEEEETABLEe</h1>
 
 <!-- Season Filter Dropdown -->
 <label for="seasonFilter">Choose Season: </label>
@@ -83,8 +83,8 @@
     const csvUrl = 'https://raw.githubusercontent.com/timotaij/LepookTable/main/MAMBAVALUES.csv';
 
     let dataRows = []; // To store the table data for sorting and filtering
-    let currentSortColumn = 3; // Default to sorting by "OVR" column (assuming OVR is column 3)
-    let sortAscending = false; // Sort by descending by default for OVR
+    let currentSortColumn = null; // Default to sorting by "OVR" column
+    let sortAscending = true; // Sort by ascending by default
     let currentSeason = '2017'; // Start with the 2017 season by default
 
     fetch(csvUrl)
@@ -122,7 +122,8 @@
 
     // Function to get rows for a specific season
     function getRowsForSeason(season) {
-        return dataRows.filter(row => row[3] === season); // Assuming the season is in column 3
+        // Find the index of the season column (assuming column 3 for season)
+        return dataRows.filter(row => row.includes(season)); // Filter by season
     }
 
     // Function to render the table body
@@ -183,7 +184,7 @@
         // Add arrow direction on current column
         headerEl.classList.add(sortAscending ? 'asc' : 'desc');
 
-        const sortedRows = [...dataRows].filter(row => row[3] === currentSeason) // Filter rows for current season
+        const sortedRows = [...dataRows].filter(row => row.includes(currentSeason)) // Filter rows for current season
             .sort((a, b) => {
                 const valA = isNaN(a[columnIndex]) ? a[columnIndex] : parseFloat(a[columnIndex]);
                 const valB = isNaN(b[columnIndex]) ? b[columnIndex] : parseFloat(b[columnIndex]);
@@ -202,4 +203,3 @@
 
 </body>
 </html>
-
