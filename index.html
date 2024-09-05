@@ -36,7 +36,9 @@
             margin-bottom: 10px;
         }
         tbody {
-            overflow-y: auto;  /* Enable vertical scrolling if needed */
+            display: block;
+            max-height: 600px; /* Set a max height to enable scrolling */
+            overflow-y: auto;  /* Enable vertical scrolling */
         }
         thead, tbody tr {
             display: table;
