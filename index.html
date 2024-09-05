@@ -88,7 +88,7 @@
             });
 
             // Render the table body initially
-            renderTableBody(dataRows);
+            filterTable();  // Initially filter with default season (2017)
 
             // Filter functionality for Player Name
             document.getElementById('filterPlayer').addEventListener('input', filterTable);
@@ -143,7 +143,7 @@
 
         const filteredRows = dataRows.filter(row => {
             const playerName = row[0].toLowerCase();
-            const season = row[row.length - 1]; // Assuming Season is the last column
+            const season = row[row.length - 1].trim(); // Assuming Season is the last column and trimming whitespace
             return playerName.includes(playerFilterValue) && season === seasonFilterValue;
         });
 
