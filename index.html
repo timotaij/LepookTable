@@ -36,10 +36,6 @@
         th.sortable.desc:after {
             content: '\25BC'; /* Descending arrow */
         }
-        .filter-input {
-            margin-bottom: 10px;
-            width: 100px;
-        }
         .filter-row {
             background-color: #f1f1f1;
         }
@@ -53,23 +49,37 @@
             width: 100%;
             table-layout: fixed;
         }
+        select {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
-<h1>Impact Table</h1>
+<h1>VEEEETABLEe</h1>
 
-<!-- Table with Filters -->
+<!-- Season Filter Dropdown -->
+<label for="seasonFilter">Choose Season: </label>
+<select id="seasonFilter">
+    <option value="2017">2017</option>
+    <option value="2018">2018</option>
+    <option value="2019">2019</option>
+    <option value="2020">2020</option>
+    <option value="2021">2021</option>
+    <option value="2022">2022</option>
+    <option value="2023">2023</option>
+    <option value="2024">2024</option>
+</select>
+
+<!-- Table -->
 <table id="csvTable">
     <thead>
         <tr id="tableHeader"></tr>
-        <tr id="filterRow" class="filter-row"></tr>
     </thead>
     <tbody id="tableBody"></tbody>
 </table>
 
 <script>
-    // URL of the CSV file in your repository
     const csvUrl = 'https://raw.githubusercontent.com/timotaij/LepookTable/main/MAMBAVALUES.csv';
 
     let dataRows = []; // To store the table data for sorting and filtering
@@ -86,34 +96,15 @@
 
             // Create table header with sortable columns
             const headerRow = document.getElementById('tableHeader');
-            const filterRow = document.getElementById('filterRow');
             header.forEach((cell, index) => {
                 const th = document.createElement('th');
                 th.textContent = cell;
                 th.classList.add('sortable');
-                
+
                 // Add sorting functionality to each header
                 th.addEventListener('click', () => {
                     toggleSortByColumn(index, th);
                 });
-
-                // Add filters for each column
-                const filterInput = document.createElement('input');
-                filterInput.type = 'text';
-                filterInput.className = 'filter-input';
-                filterInput.setAttribute('data-column', index);
-                filterInput.placeholder = `Filter ${cell}`;
-                filterInput.addEventListener('input', filterTable);
-
-                // Special handling for season column to auto-filter the season
-                if (cell === 'Season') {
-                    filterInput.value = '2017'; // Default to 2017 season
-                    filterInput.addEventListener('input', filterBySeason);
-                }
-
-                const thFilter = document.createElement('th');
-                thFilter.appendChild(filterInput);
-                filterRow.appendChild(thFilter);
 
                 headerRow.appendChild(th);
             });
@@ -121,6 +112,11 @@
             // Render the rows for the initial season (2017)
             renderTableBody(getRowsForSeason('2017'));
 
+            // Event listener for season dropdown change
+            document.getElementById('seasonFilter').addEventListener('change', function() {
+                currentSeason = this.value;
+                renderTableBody(getRowsForSeason(currentSeason));
+            });
         })
         .catch(error => console.error('Error loading the CSV file:', error));
 
@@ -201,29 +197,6 @@
 
         // Render the sorted rows for the current season
         renderTableBody(sortedRows);
-    }
-
-    // Function to filter table based on input in filter boxes
-    function filterTable() {
-        const filterInputs = document.querySelectorAll('.filter-input');
-        const filteredRows = dataRows.filter(row => row[3] === currentSeason) // Apply season filter first
-            .filter(row => {
-                return filterInputs.every(input => {
-                    const column = input.getAttribute('data-column');
-                    const filterValue = input.value.toLowerCase();
-                    const cell = row[column]?.toLowerCase();
-                    return !filterValue || cell.includes(filterValue);
-                });
-            });
-
-        renderTableBody(filteredRows);
-    }
-
-    // Function to filter by season
-    function filterBySeason(event) {
-        currentSeason = event.target.value;
-        const rowsForSeason = getRowsForSeason(currentSeason);
-        renderTableBody(rowsForSeason);
     }
 </script>
 
