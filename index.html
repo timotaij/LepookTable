@@ -18,11 +18,11 @@
             text-align: left;
         }
         th {
+            position: sticky; /* Makes the header sticky */
+            top: 0; /* Stick the header at the top of the table */
+            background-color: white; /* Ensure background color for visibility */
+            z-index: 1; /* Keeps the header on top of the table body */
             cursor: pointer;
-            position: sticky; /* Make the header sticky */
-            top: 0;           /* Stick to the top of the table */
-            background-color: white; /* Add background to prevent overlap */
-            z-index: 2;       /* Ensure it stays on top */
         }
         th.sortable:after {
             content: '▲'; /* Default ascending arrow */
@@ -37,19 +37,19 @@
         }
         tbody {
             display: block;
-            max-height: 450px; /* Set a max height to enable scrolling */
-            overflow-y: auto;  /* Enable vertical scrolling */
+            max-height: 600px; /* Set a max height for the table body */
+            overflow-y: auto;  /* Enable vertical scrolling in the body */
         }
         thead, tbody tr {
             display: table;
             width: 100%;
-            table-layout: fixed; /* Ensure the columns remain aligned */
+            table-layout: fixed; /* Ensures that the columns remain aligned */
         }
     </style>
 </head>
 <body>
 
-<h1>Impact Metric Tablea</h1>
+<h1>Nameless Impact Metric</h1>
 
 <!-- Filter Input for Player Name -->
 <label for="filterPlayer">Filter by Player Name:</label>
