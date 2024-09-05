@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Table</title>
+    <title>Interactive CSV Table</title>
     <style>
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
         table, th, td {
             border: 1px solid black;
@@ -16,12 +17,20 @@
             padding: 10px;
             text-align: left;
         }
+        .filter-input {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
-<h1>CSV Data Table</h1>
+<h1>Interactive CSV Data Table</h1>
 
+<!-- Filter Input -->
+<label for="filter">Filter by Player Name:</label>
+<input type="text" id="filter" class="filter-input" placeholder="Search for a player">
+
+<!-- Table -->
 <table id="csvTable">
     <thead>
         <tr id="tableHeader"></tr>
@@ -36,7 +45,7 @@
     fetch(csvUrl)
         .then(response => response.text())
         .then(data => {
-            const rows = data.split('\n');
+            const rows = data.split('\n').filter(row => row.trim() !== ''); // Remove any empty rows
             const header = rows[0].split(',');
             const bodyRows = rows.slice(1);
             
@@ -52,15 +61,43 @@
             const tableBody = document.getElementById('tableBody');
             bodyRows.forEach(row => {
                 const tr = document.createElement('tr');
-                row.split(',').forEach(cell => {
+                row.split(',').forEach((cell, index) => {
                     const td = document.createElement('td');
                     td.textContent = cell;
+
+                    // Apply conditional formatting for numeric columns (values like Offense, Defense)
+                    if (!isNaN(cell) && index > 0) { // Skip player name column (index 0)
+                        const value = parseFloat(cell);
+                        td.style.backgroundColor = getColorForValue(value, -3, 3); // Color based on -3 to +3 scale
+                    }
+
                     tr.appendChild(td);
                 });
                 tableBody.appendChild(tr);
             });
+
+            // Add filter functionality
+            document.getElementById('filter').addEventListener('input', function() {
+                const filterValue = this.value.toLowerCase();
+                const rows = tableBody.getElementsByTagName('tr');
+                for (let i = 0; i < rows.length; i++) {
+                    const firstCell = rows[i].getElementsByTagName('td')[0];
+                    if (firstCell) {
+                        const playerName = firstCell.textContent.toLowerCase();
+                        rows[i].style.display = playerName.includes(filterValue) ? '' : 'none';
+                    }
+                }
+            });
         })
         .catch(error => console.error('Error loading the CSV file:', error));
+
+    // Function to get color based on value from red (-3) to green (+3)
+    function getColorForValue(value, min, max) {
+        const percentage = (value - min) / (max - min);
+        const red = Math.min(255, Math.max(0, 255 * (1 - percentage)));
+        const green = Math.min(255, Math.max(0, 255 * percentage));
+        return `rgb(${red}, ${green}, 0)`;
+    }
 </script>
 
 </body>
