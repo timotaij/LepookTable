@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mamba Values Table</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Mamba Values CSV Data</h1>
+
+<input type="file" id="fileInput" />
+<br><br>
+
+<table id="csvTable">
+    <thead>
+        <tr id="tableHeader"></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+</table>
+
+<script>
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(event) {
+            const text = event.target.result;
+            const rows = text.split('\n');
+            const header = rows[0].split(',');
+            const bodyRows = rows.slice(1);
+            
+            // Create table header
+            const headerRow = document.getElementById('tableHeader');
+            header.forEach(cell => {
+                const th = document.createElement('th');
+                th.textContent = cell;
+                headerRow.appendChild(th);
+            });
+            
+            // Create table body
+            const tableBody = document.getElementById('tableBody');
+            bodyRows.forEach(row => {
+                const tr = document.createElement('tr');
+                row.split(',').forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+        };
+        
+        reader.readAsText(file);
+    });
+</script>
+
+</body>
+</html>
