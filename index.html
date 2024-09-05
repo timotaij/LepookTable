@@ -37,9 +37,13 @@
 
 <h1>Impact Metric Table</h1>
 
-<!-- Filter Input -->
-<label for="filter">Filter by Player Name:</label>
-<input type="text" id="filter" class="filter-input" placeholder="Search for a player">
+<!-- Filter Input for Player Name -->
+<label for="filterPlayer">Filter by Player Name:</label>
+<input type="text" id="filterPlayer" class="filter-input" placeholder="Search for a player">
+
+<!-- Filter Input for Season -->
+<label for="filterSeason">Filter by Season:</label>
+<input type="text" id="filterSeason" class="filter-input" placeholder="Search for a season">
 
 <!-- Table -->
 <table id="csvTable">
@@ -77,11 +81,14 @@
             // Render the table body initially
             renderTableBody(dataRows);
 
-            // Filter functionality
-            document.getElementById('filter').addEventListener('input', function() {
-                const filterValue = this.value.toLowerCase();
-                const filteredRows = dataRows.filter(row => row[0].toLowerCase().includes(filterValue));
-                renderTableBody(filteredRows);
+            // Filter functionality for Player Name
+            document.getElementById('filterPlayer').addEventListener('input', function() {
+                filterTable();
+            });
+
+            // Filter functionality for Season
+            document.getElementById('filterSeason').addEventListener('input', function() {
+                filterTable();
             });
         })
         .catch(error => console.error('Error loading the CSV file:', error));
@@ -122,6 +129,20 @@
             });
             tableBody.appendChild(tr);
         });
+    }
+
+    // Function to filter table based on Player Name and Season
+    function filterTable() {
+        const playerFilterValue = document.getElementById('filterPlayer').value.toLowerCase();
+        const seasonFilterValue = document.getElementById('filterSeason').value.toLowerCase();
+
+        const filteredRows = dataRows.filter(row => {
+            const playerName = row[0].toLowerCase();
+            const season = row[row.length - 1].toLowerCase(); // Assuming Season is the last column
+            return playerName.includes(playerFilterValue) && season.includes(seasonFilterValue);
+        });
+
+        renderTableBody(filteredRows);
     }
 
     // Function to sort the table by column
