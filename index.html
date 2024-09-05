@@ -69,7 +69,7 @@
 </head>
 <body>
 
-<h1>VEEEETABLEe</h1>
+<h1>NewEdit</h1>
 
 <!-- Table with Filters -->
 <table id="csvTable">
@@ -88,8 +88,8 @@
     const csvUrl = 'https://raw.githubusercontent.com/timotaij/LepookTable/main/MAMBAVALUES.csv';
 
     let dataRows = []; // To store the table data for sorting and filtering
-    let currentSortColumn = null;
-    let sortAscending = true; // To toggle sorting order
+    let currentSortColumn = 3; // Default to sorting by "OVR" column (assuming OVR is column 3)
+    let sortAscending = false; // Sort by descending by default for OVR
     let currentRowsToShow = 20; // Default number of rows to show initially
     const rowsPerLoad = 20; // Number of rows to load each time
 
@@ -100,6 +100,9 @@
             const header = rows[0].split(',');
             dataRows = rows.slice(1).map(row => row.split(',')); // Store the data for sorting
 
+            // Filter the data to include only 2017 data initially
+            const initialRows = dataRows.filter(row => row[header.indexOf('Season')] === '2017');
+            
             // Create table header with sortable columns
             const headerRow = document.getElementById('tableHeader');
             const filterRow = document.getElementById('filterRow');
@@ -128,8 +131,15 @@
                 headerRow.appendChild(th);
             });
 
-            // Render the first set of rows
-            renderTableBody(dataRows.slice(0, currentRowsToShow));
+            // Sort the 2017 rows by OVR column
+            const sortedInitialRows = initialRows.sort((a, b) => {
+                const valA = parseFloat(a[currentSortColumn]);
+                const valB = parseFloat(b[currentSortColumn]);
+                return sortAscending ? valA - valB : valB - valA; // Default sort to descending
+            });
+
+            // Render the first set of rows (2017 data sorted by OVR)
+            renderTableBody(sortedInitialRows);
 
             // Load more rows on button click
             document.getElementById('loadMoreBtn').addEventListener('click', loadMoreRows);
@@ -236,10 +246,10 @@
         renderTableBody(sortedFilteredRows.slice(0, currentRowsToShow));
     }
 
-    // Function to load more rows
+    // Function to load more rows (all seasons after the default 2017 load)
     function loadMoreRows() {
-        currentRowsToShow += rowsPerLoad;
-        renderTableBody(dataRows.slice(0, currentRowsToShow));
+        const remainingRows = dataRows.filter(row => row[3] !== '2017'); // Show rows after 2017
+        renderTableBody(remainingRows.slice(0, currentRowsToShow));
     }
 </script>
 
