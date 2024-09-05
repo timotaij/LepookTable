@@ -17,53 +17,23 @@
             padding: 10px;
             text-align: left;
         }
-        th {
-            position: sticky;
-            top: 0;
-            background-color: white;
-            z-index: 1;
-            cursor: pointer;
-        }
-        th.sortable {
-            position: relative;
-        }
-        th.sortable:after {
-            content: '\25B2'; /* Default ascending arrow */
-            position: absolute;
-            right: 5px;
-            font-size: 12px;
-        }
-        th.sortable.desc:after {
-            content: '\25BC'; /* Descending arrow */
-        }
         .filter-input {
             margin-bottom: 10px;
-            width: 100px;
-        }
-        .filter-row {
-            background-color: #f1f1f1;
-        }
-        tbody {
-            display: block;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        thead, tbody tr {
-            display: table;
-            width: 100%;
-            table-layout: fixed;
         }
     </style>
 </head>
 <body>
 
-<h1>Impact Table2</h1>
+<h1>Impact Metric Attempt</h1>
 
-<!-- Table with Filters -->
+<!-- Filter Input -->
+<label for="filter">Filter by Player Name:</label>
+<input type="text" id="filter" class="filter-input" placeholder="Search for a player">
+
+<!-- Table -->
 <table id="csvTable">
     <thead>
         <tr id="tableHeader"></tr>
-        <tr id="filterRow" class="filter-row"></tr>
     </thead>
     <tbody id="tableBody"></tbody>
 </table>
@@ -72,158 +42,61 @@
     // URL of the CSV file in your repository
     const csvUrl = 'https://raw.githubusercontent.com/timotaij/LepookTable/main/MAMBAVALUES.csv';
 
-    let dataRows = []; // To store the table data for sorting and filtering
-    let currentSortColumn = 3; // Default to sorting by "OVR" column (assuming OVR is column 3)
-    let sortAscending = false; // Sort by descending by default for OVR
-    let currentSeason = '2017'; // Start with the 2017 season by default
-
     fetch(csvUrl)
         .then(response => response.text())
         .then(data => {
             const rows = data.split('\n').filter(row => row.trim() !== ''); // Remove any empty rows
             const header = rows[0].split(',');
-            dataRows = rows.slice(1).map(row => row.split(',')); // Store the data for sorting
-
-            // Create table header with sortable columns
+            const bodyRows = rows.slice(1);
+            
+            // Create table header
             const headerRow = document.getElementById('tableHeader');
-            const filterRow = document.getElementById('filterRow');
-            header.forEach((cell, index) => {
+            header.forEach(cell => {
                 const th = document.createElement('th');
                 th.textContent = cell;
-                th.classList.add('sortable');
-                
-                // Add sorting functionality to each header
-                th.addEventListener('click', () => {
-                    toggleSortByColumn(index, th);
-                });
-
-                // Add filters for each column
-                const filterInput = document.createElement('input');
-                filterInput.type = 'text';
-                filterInput.className = 'filter-input';
-                filterInput.setAttribute('data-column', index);
-                filterInput.placeholder = `Filter ${cell}`;
-                filterInput.addEventListener('input', filterTable);
-
-                // Special handling for season column to auto-filter the season
-                if (cell === 'Season') {
-                    filterInput.value = '2017'; // Default to 2017 season
-                    filterInput.addEventListener('input', filterBySeason);
-                }
-
-                const thFilter = document.createElement('th');
-                thFilter.appendChild(filterInput);
-                filterRow.appendChild(thFilter);
-
                 headerRow.appendChild(th);
             });
+            
+            // Create table body
+            const tableBody = document.getElementById('tableBody');
+            bodyRows.forEach(row => {
+                const tr = document.createElement('tr');
+                row.split(',').forEach((cell, index) => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
 
-            // Render the rows for the initial season (2017)
-            renderTableBody(getRowsForSeason('2017'));
+                    // Apply conditional formatting for numeric columns (values like Offense, Defense)
+                    if (!isNaN(cell) && index > 0) { // Skip player name column (index 0)
+                        const value = parseFloat(cell);
+                        td.style.backgroundColor = getColorForValue(value, -3, 3); // Color based on -3 to +3 scale
+                    }
 
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+
+            // Add filter functionality
+            document.getElementById('filter').addEventListener('input', function() {
+                const filterValue = this.value.toLowerCase();
+                const rows = tableBody.getElementsByTagName('tr');
+                for (let i = 0; i < rows.length; i++) {
+                    const firstCell = rows[i].getElementsByTagName('td')[0];
+                    if (firstCell) {
+                        const playerName = firstCell.textContent.toLowerCase();
+                        rows[i].style.display = playerName.includes(filterValue) ? '' : 'none';
+                    }
+                }
+            });
         })
         .catch(error => console.error('Error loading the CSV file:', error));
 
-    // Function to get rows for a specific season
-    function getRowsForSeason(season) {
-        return dataRows.filter(row => row[3] === season); // Assuming the season is in column 3
-    }
-
-    // Function to render the table body
-    function renderTableBody(rows) {
-        const tableBody = document.getElementById('tableBody');
-        tableBody.innerHTML = ''; // Clear previous content
-        rows.forEach(row => {
-            const tr = document.createElement('tr');
-            row.forEach((cell, index) => {
-                const td = document.createElement('td');
-                td.textContent = cell;
-
-                // Apply conditional formatting for numeric columns (values like Offense, Defense)
-                if (!isNaN(cell) && index > 0) { // Skip player name column (index 0)
-                    const value = parseFloat(cell);
-                    td.style.backgroundColor = getColorForValue(value, -3, 3); // Color based on -3 to +3 scale
-                }
-
-                tr.appendChild(td);
-            });
-            tableBody.appendChild(tr);
-        });
-    }
-
-    // Function to get color based on value from red (-3) to green (+3), with white in the middle
+    // Function to get color based on value from red (-3) to green (+3)
     function getColorForValue(value, min, max) {
-        const mid = (min + max) / 2;
-        const ratio = (value - mid) / (max - min);
-        let red, green;
-
-        if (value >= mid) {
-            green = 255;
-            red = 255 * (1 - ratio);  // Shade toward green
-        } else {
-            red = 255;
-            green = 255 * (1 + ratio);  // Shade toward red
-        }
-
-        // Limit the brightness to prevent overpowering the text
-        red = Math.max(red, 120);
-        green = Math.max(green, 120);
-
-        return `rgb(${Math.round(red)}, ${Math.round(green)}, 120)`; // Keeping blue component low for better contrast
-    }
-
-    // Function to sort table by column (with toggle between ascending/descending)
-    function toggleSortByColumn(columnIndex, headerEl) {
-        // Clear sorting arrows from all headers
-        document.querySelectorAll('.sortable').forEach(th => th.classList.remove('desc', 'asc'));
-
-        if (currentSortColumn === columnIndex) {
-            sortAscending = !sortAscending; // Toggle sort order if clicking the same column
-        } else {
-            sortAscending = true; // Default to ascending when clicking a new column
-            currentSortColumn = columnIndex;
-        }
-
-        // Add arrow direction on current column
-        headerEl.classList.add(sortAscending ? 'asc' : 'desc');
-
-        const sortedRows = [...dataRows].filter(row => row[3] === currentSeason) // Filter rows for current season
-            .sort((a, b) => {
-                const valA = isNaN(a[columnIndex]) ? a[columnIndex] : parseFloat(a[columnIndex]);
-                const valB = isNaN(b[columnIndex]) ? b[columnIndex] : parseFloat(b[columnIndex]);
-
-                if (sortAscending) {
-                    return valA > valB ? 1 : -1;
-                } else {
-                    return valA < valB ? 1 : -1;
-                }
-            });
-
-        // Render the sorted rows for the current season
-        renderTableBody(sortedRows);
-    }
-
-    // Function to filter table based on input in filter boxes
-    function filterTable() {
-        const filterInputs = document.querySelectorAll('.filter-input');
-        const filteredRows = dataRows.filter(row => row[3] === currentSeason) // Apply season filter first
-            .filter(row => {
-                return filterInputs.every(input => {
-                    const column = input.getAttribute('data-column');
-                    const filterValue = input.value.toLowerCase();
-                    const cell = row[column]?.toLowerCase();
-                    return !filterValue || cell.includes(filterValue);
-                });
-            });
-
-        renderTableBody(filteredRows);
-    }
-
-    // Function to filter by season
-    function filterBySeason(event) {
-        currentSeason = event.target.value;
-        const rowsForSeason = getRowsForSeason(currentSeason);
-        renderTableBody(rowsForSeason);
+        const percentage = (value - min) / (max - min);
+        const red = Math.min(255, Math.max(0, 255 * (1 - percentage)));
+        const green = Math.min(255, Math.max(0, 255 * percentage));
+        return `rgb(${red}, ${green}, 0)`;
     }
 </script>
 
