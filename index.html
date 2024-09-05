@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mamba Values Table</title>
+    <title>CSV Table</title>
     <style>
         table {
             width: 100%;
@@ -20,10 +20,7 @@
 </head>
 <body>
 
-<h1>Mamba Values CSV Data</h1>
-
-<input type="file" id="fileInput" />
-<br><br>
+<h1>CSV Data Table</h1>
 
 <table id="csvTable">
     <thead>
@@ -33,13 +30,12 @@
 </table>
 
 <script>
-    document.getElementById('fileInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = function(event) {
-            const text = event.target.result;
-            const rows = text.split('\n');
+    const csvUrl = 'https://raw.githubusercontent.com/timotaij/LepookTable/main/MAMBAVALUES.csv';
+
+    fetch(csvUrl)
+        .then(response => response.text())
+        .then(data => {
+            const rows = data.split('\n');
             const header = rows[0].split(',');
             const bodyRows = rows.slice(1);
             
@@ -62,10 +58,8 @@
                 });
                 tableBody.appendChild(tr);
             });
-        };
-        
-        reader.readAsText(file);
-    });
+        })
+        .catch(error => console.error('Error loading the CSV file:', error));
 </script>
 
 </body>
