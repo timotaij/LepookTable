@@ -18,38 +18,38 @@
             text-align: left;
         }
         th {
-            position: sticky; /* Makes the header sticky */
-            top: 0; /* Stick the header at the top of the table */
-            background-color: white; /* Ensure background color for visibility */
-            z-index: 1; /* Keeps the header on top of the table body */
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 1;
             cursor: pointer;
         }
         th.sortable:after {
-            content: '▲'; /* Default ascending arrow */
+            content: '▲';
             font-size: 12px;
             margin-left: 5px;
         }
         th.desc:after {
-            content: '▼'; /* Descending arrow */
+            content: '▼';
         }
         .filter-input {
             margin-bottom: 10px;
         }
         tbody {
             display: block;
-            max-height: 600px; /* Set a max height for the table body */
-            overflow-y: auto;  /* Enable vertical scrolling in the body */
+            max-height: 600px;
+            overflow-y: auto;
         }
         thead, tbody tr {
             display: table;
             width: 100%;
-            table-layout: fixed; /* Ensures that the columns remain aligned */
+            table-layout: fixed;
         }
     </style>
 </head>
 <body>
 
-<h1>Nameless Impact Metric</h1>
+<h1>Impact Metric Table</h1>
 
 <!-- Filter Input for Player Name -->
 <label for="filterPlayer">Filter by Player Name:</label>
@@ -58,8 +58,6 @@
 <!-- Dropdown for Season -->
 <label for="filterSeason">Filter by Season:</label>
 <select id="filterSeason" class="filter-input">
-    <option value="2015">2015</option>
-    <option value="2016">2016</option>
     <option value="2017" selected>2017</option>
     <option value="2018">2018</option>
     <option value="2019">2019</option>
@@ -166,31 +164,38 @@
         renderTableBody(filteredRows);
     }
 
-    // Function to sort the table by column
+    // Function to sort the filtered table by column
     function toggleSortByColumn(columnIndex, headerEl) {
         const allHeaders = document.querySelectorAll('.sortable');
         allHeaders.forEach(th => th.classList.remove('desc', 'asc'));
 
+        // Toggle the sort order
         if (currentSortColumn === columnIndex) {
-            sortAscending = !sortAscending; // Toggle sort order if same column clicked
+            sortAscending = !sortAscending;
         } else {
             sortAscending = true; // Default to ascending for new column
             currentSortColumn = columnIndex;
         }
 
+        // Update arrow direction
         headerEl.classList.add(sortAscending ? 'asc' : 'desc');
 
-        const sortedRows = [...dataRows].sort((a, b) => {
+        // Apply sorting to the currently filtered rows
+        const filteredRows = dataRows.filter(row => {
+            const playerName = row[0].toLowerCase();
+            const season = row[row.length - 1].trim();
+            return playerName.includes(document.getElementById('filterPlayer').value.toLowerCase()) &&
+                   season === document.getElementById('filterSeason').value;
+        });
+
+        const sortedRows = [...filteredRows].sort((a, b) => {
             const valA = isNaN(a[columnIndex]) ? a[columnIndex] : parseFloat(a[columnIndex]);
             const valB = isNaN(b[columnIndex]) ? b[columnIndex] : parseFloat(b[columnIndex]);
 
-            // Ensure correct sorting by treating numbers and strings separately
             if (!isNaN(valA) && !isNaN(valB)) {
                 return sortAscending ? valA - valB : valB - valA;
             } else {
-                if (valA < valB) return sortAscending ? -1 : 1;
-                if (valA > valB) return sortAscending ? 1 : -1;
-                return 0;
+                return sortAscending ? valA.localeCompare(valB) : valB.localeCompare(valA);
             }
         });
 
